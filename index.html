@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app">
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="logo-text">CRM China</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-screen="dashboard">
+                    <span class="nav-icon">●</span>
+                    <span>Главная</span>
+                </li>
+                <li class="nav-item" data-screen="orders">
+                    <span class="nav-icon">●</span>
+                    <span>Заказы</span>
+                </li>
+                <li class="nav-item" data-screen="reviews">
+                    <span class="nav-icon">●</span>
+                    <span>Отзывы</span>
+                </li>
+                <li class="nav-item" data-screen="settings">
+                    <span class="nav-icon">●</span>
+                    <span>Настройки</span>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <!-- Дашборд -->
+            <section id="screen-dashboard" class="screen active">
+                <h1>Главная</h1>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Сегодня</div>
+                        <div class="stat-value" id="profit-today">0.00 BYN</div>
+                        <div class="stat-sub" id="profit-today-sub">≈ ¥ 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Неделя</div>
+                        <div class="stat-value" id="profit-week">0.00 BYN</div>
+                        <div class="stat-sub" id="profit-week-sub">≈ ¥ 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Месяц</div>
+                        <div class="stat-value" id="profit-month">0.00 BYN</div>
+                        <div class="stat-sub" id="profit-month-sub">≈ ¥ 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Год</div>
+                        <div class="stat-value" id="profit-year">0.00 BYN</div>
+                        <div class="stat-sub" id="profit-year-sub">≈ ¥ 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Alipay</div>
+                        <div class="stat-value" id="alipay-balance">¥ 0.00</div>
+                        <div class="stat-sub" id="alipay-balance-sub">≈ 0.00 BYN</div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="navigateTo('orders'); showNewOrderForm();">
+                        + Новый заказ
+                    </button>
+                    <button class="btn" onclick="showWithdrawForm()">
+                        − Вывести из Alipay
+                    </button>
+                </div>
+
+                <div class="alipay-section">
+                    <div class="alipay-header">
+                        <h2>Alipay</h2>
+                        <div class="alipay-info">
+                            <span id="alipay-total">Всего: ¥ 0.00</span>
+                            <span id="alipay-withdrawn">Выведено: ¥ 0.00</span>
+                        </div>
+                    </div>
+                    <div id="withdrawals-list" class="withdrawals-list">
+                        <p class="empty-state" style="padding: 20px">Нет выводов</p>
+                    </div>
+                </div>
+
+                <h2>Последние заказы</h2>
+                <div id="recent-orders" class="orders-list">
+                    <p class="empty-state">Нет заказов</p>
+                </div>
+            </section>
+
+            <!-- Заказы -->
+            <section id="screen-orders" class="screen">
+                <h1>Заказы</h1>
+                
+                <div class="orders-header">
+                    <div class="search-box">
+                        <input type="text" id="search-orders" placeholder="Поиск по имени, Telegram или треку...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="filter-status">
+                            <option value="">Все статусы</option>
+                            <option value="awaiting">Ожидает</option>
+                            <option value="in_transit">В пути</option>
+                            <option value="received_by_me">Получен мной</option>
+                            <option value="sent_to_client">Отправлен клиенту</option>
+                            <option value="completed">Завершён</option>
+                        </select>
+                        <select id="filter-delivery">
+                            <option value="">Все способы</option>
+                            <option value="air">Авиа</option>
+                            <option value="auto">Авто</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="showNewOrderForm()">
+                        + Новый
+                    </button>
+                </div>
+
+                <div id="orders-list" class="orders-list">
+                    <p class="empty-state">Нет заказов</p>
+                </div>
+
+                <!-- Модалка заказа -->
+                <div id="order-form-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="order-form-title">Новый заказ</h2>
+                            <button class="btn-close" onclick="hideOrderForm()">&times;</button>
+                        </div>
+                        <form id="order-form">
+                            <input type="hidden" id="order-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Товар</label>
+                                    <input type="text" id="order-item-name" required placeholder="Название товара">
+                                </div>
+                                <div class="form-group">
+                                    <label>Telegram</label>
+                                    <input type="text" id="order-tg-username" required placeholder="@username">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Доставка</label>
+                                    <select id="order-delivery" required>
+                                        <option value="air">Авиа</option>
+                                        <option value="auto">Авто</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="tariff-group">
+                                    <label>Тариф (¥/кг)</label>
+                                    <select id="order-tariff">
+                                        <option value="120">120 ¥</option>
+                                        <option value="110">110 ¥</option>
+                                        <option value="100">100 ¥</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Валюта</label>
+                                    <select id="order-currency" required>
+                                        <option value="byn">BYN</option>
+                                        <option value="rub">RUB</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Цена товара (¥)</label>
+                                    <input type="number" id="order-price-yuan" step="0.01" required placeholder="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Вес (кг)</label>
+                                    <input type="number" id="order-weight" step="0.01" required placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Курс ¥ → валюта</label>
+                                    <input type="number" id="order-rate" step="0.0001" required placeholder="0.44">
+                                </div>
+                                <div class="form-group">
+                                    <label id="order-client-price-label">Цена для клиента (BYN)</label>
+                                    <input type="number" id="order-client-price" step="0.01" required placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="calc-preview" id="order-calc-preview">
+                                <div class="preview-row">
+                                    <span>Доставка</span>
+                                    <span id="preview-delivery">¥ 0.00</span>
+                                </div>
+                                <div class="preview-row">
+                                    <span>Себестоимость</span>
+                                    <span id="preview-cost">0.00</span>
+                                </div>
+                                <div class="preview-row profit">
+                                    <span>Прибыль</span>
+                                    <span id="preview-profit">0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Предоплата</label>
+                                    <input type="number" id="order-prepaid" step="0.01" placeholder="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Трек-номер</label>
+                                    <input type="text" id="order-tracking" placeholder="Номер отслеживания">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Комментарий</label>
+                                <textarea id="order-comment" rows="2" placeholder="Дополнительная информация..."></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn" onclick="hideOrderForm()">Отмена</button>
+                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Отзывы -->
+            <section id="screen-reviews" class="screen">
+                <h1>Отзывы</h1>
+                
+                <div class="reviews-header">
+                    <div class="search-box">
+                        <input type="text" id="search-reviews" placeholder="Поиск по Telegram...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="filter-review-status">
+                            <option value="">Все</option>
+                            <option value="not_wrote">Ещё не написал</option>
+                            <option value="waiting">Жду</option>
+                            <option value="left">Оставил</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="showReviewForm()">
+                        + Добавить
+                    </button>
+                </div>
+
+                <div id="reviews-list" class="reviews-list">
+                    <p class="empty-state">Нет отзывов</p>
+                </div>
+
+                <!-- Модалка отзыва -->
+                <div id="review-form-modal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 450px;">
+                        <div class="modal-header">
+                            <h2 id="review-form-title">Новый отзыв</h2>
+                            <button class="btn-close" onclick="hideReviewForm()">&times;</button>
+                        </div>
+                        <form id="review-form">
+                            <input type="hidden" id="review-id">
+                            <div style="padding: 32px;">
+                                <div class="form-group">
+                                    <label>Telegram</label>
+                                    <input type="text" id="review-tg" required placeholder="@username">
+                                </div>
+                                <div class="form-group">
+                                    <label>Статус</label>
+                                    <select id="review-status" required>
+                                        <option value="not_wrote">Ещё не написал</option>
+                                        <option value="waiting">Жду</option>
+                                        <option value="left">Оставил</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Комментарий</label>
+                                    <textarea id="review-comment" rows="2" placeholder="..."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn" onclick="hideReviewForm()">Отмена</button>
+                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Настройки -->
+            <section id="screen-settings" class="screen">
+                <h1>Настройки</h1>
+                
+                <div class="settings-section">
+                    <h2>Курсы валют</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Юань → BYN (для клиентов)</label>
+                            <input type="number" id="rate-yuan-byn" step="0.0001" value="0.44">
+                        </div>
+                        <div class="form-group">
+                            <label>Юань → BYN (обмен для вывода)</label>
+                            <input type="number" id="rate-withdrawal" step="0.0001" value="0.44">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Юань → RUB</label>
+                            <input type="number" id="rate-yuan-rub" step="0.01" value="12.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Доллар → Юани</label>
+                            <input type="number" id="rate-usd-yuan" step="0.01" value="7">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Тарифы доставки</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Авто: цена за кг ($)</label>
+                            <input type="number" id="rate-auto-kg" step="0.01" value="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Авиа: цена за кг (¥)</label>
+                            <input type="number" id="rate-air-kg" step="0.01" value="120">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Бэкап данных</h2>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Экспортируйте все данные в файл и храните его в безопасности. 
+                        При потере данных импортируйте файл для восстановления.
+                    </p>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary" onclick="exportAllData()">Экспорт данных</button>
+                        <button class="btn" onclick="document.getElementById('import-file').click()">Импорт данных</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none" onchange="importAllData(event)">
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">Сохранить настройки</button>
+                    <button class="btn" onclick="exportToCSV()">Экспорт заказов CSV</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модалка вывода -->
+    <div id="withdraw-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Вывести из Alipay</h2>
+                <button class="btn-close" onclick="hideWithdrawForm()">&times;</button>
+            </div>
+            <div style="padding: 32px;">
+                <div class="form-group">
+                    <label>Сумма (¥)</label>
+                    <input type="number" id="withdraw-amount" step="0.01" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <input type="text" id="withdraw-comment" placeholder="На.restaurant и т.д.">
+                </div>
+                <div class="form-actions">
+                    <button class="btn" onclick="hideWithdrawForm()">Отмена</button>
+                    <button class="btn btn-primary" onclick="saveWithdrawal()">Вывести</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
