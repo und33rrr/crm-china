@@ -5,7 +5,9 @@ const Storage = {
         ORDERS: 'crm_orders',
         SETTINGS: 'crm_settings',
         WITHDRAWALS: 'crm_withdrawals',
-        REVIEWS: 'crm_reviews'
+        REVIEWS: 'crm_reviews',
+        GITHUB_TOKEN: 'crm_github_token',
+        GIST_ID: 'crm_gist_id'
     },
 
     get(key) {
@@ -241,5 +243,109 @@ const Storage = {
         const first = new Date(now.getFullYear(), 0, 1);
         const last = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
         return this.getProfitForPeriod(first, last);
+    },
+
+    // ===== СИНХРОНИЗАЦИЯ =====
+
+    getGitHubToken() {
+        return localStorage.getItem(this.KEYS.GITHUB_TOKEN) || '';
+    },
+
+    saveGitHubToken(token) {
+        localStorage.setItem(this.KEYS.GITHUB_TOKEN, token);
+    },
+
+    getGistId() {
+        return localStorage.getItem(this.KEYS.GIST_ID) || '';
+    },
+
+    saveGistId(id) {
+        localStorage.setItem(this.KEYS.GIST_ID, id);
+    },
+
+    // Получить все данные для синхронизации
+    getAllData() {
+        return {
+            orders: this.getOrders(),
+            reviews: this.getReviews(),
+            withdrawals: this.getWithdrawals(),
+            settings: this.getSettings(),
+            lastSync: new Date().toISOString()
+        };
+    },
+
+    // Загрузить данные из Gist
+    async syncFromGist() {
+        const token = this.getGitHubToken();
+        const gistId = this.getGistId();
+
+        if (!token || !gistId) {
+            return { success: false, error: 'Не настроен Gist' };
+        }
+
+        try {
+            const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+
+            if (!response.ok) {
+                return { success: false, error: 'Ошибка доступа к Gist' };
+            }
+
+            const gist = await response.json();
+            const content = gist.files['crm-data.json']?.content;
+
+            if (!content) {
+                return { success: false, error: 'Файл не найден в Gist' };
+            }
+
+            const data = JSON.parse(content);
+
+            // Сохраняем данные
+            if (data.orders) this.set(this.KEYS.ORDERS, data.orders);
+            if (data.reviews) this.set(this.KEYS.REVIEWS, data.reviews);
+            if (data.withdrawals) this.set(this.KEYS.WITHDRAWALS, data.withdrawals);
+            if (data.settings) this.set(this.KEYS.SETTINGS, data.settings);
+
+            return { success: true, lastSync: data.lastSync };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
+    },
+
+    // Сохранить данные в Gist
+    async syncToGist() {
+        const token = this.getGitHubToken();
+        const gistId = this.getGistId();
+
+        if (!token || !gistId) {
+            return { success: false, error: 'Не настроен Gist' };
+        }
+
+        const data = this.getAllData();
+        const content = JSON.stringify(data, null, 2);
+
+        try {
+            const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    files: {
+                        'crm-data.json': { content }
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                return { success: false, error: 'Ошибка сохранения' };
+            }
+
+            return { success: true };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
     }
 };

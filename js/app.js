@@ -541,6 +541,10 @@ function loadSettings() {
     document.getElementById('rate-usd-yuan').value = s.usdToYuanRate;
     document.getElementById('rate-auto-kg').value = s.autoDeliveryRatePerKg;
     document.getElementById('rate-air-kg').value = s.airDeliveryRatePerKg;
+    
+    // GitHub Gist
+    document.getElementById('github-token').value = Storage.getGitHubToken();
+    document.getElementById('gist-id').value = Storage.getGistId();
 }
 
 function saveSettings() {
@@ -552,7 +556,49 @@ function saveSettings() {
         autoDeliveryRatePerKg: parseFloat(document.getElementById('rate-auto-kg').value) || 6,
         airDeliveryRatePerKg: parseFloat(document.getElementById('rate-air-kg').value) || 120
     });
+    
+    // GitHub Gist
+    Storage.saveGitHubToken(document.getElementById('github-token').value);
+    Storage.saveGistId(document.getElementById('gist-id').value);
+    
     alert('Сохранено');
+}
+
+// ===== СИНХРОНИЗАЦИЯ =====
+
+async function syncToGist() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Сохраняю...';
+    
+    const result = await Storage.syncToGist();
+    
+    btn.disabled = false;
+    btn.textContent = 'Сохранить в Gist';
+    
+    if (result.success) {
+        alert('Данные сохранены в Gist!');
+    } else {
+        alert('Ошибка: ' + result.error);
+    }
+}
+
+async function syncFromGist() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Загружаю...';
+    
+    const result = await Storage.syncFromGist();
+    
+    btn.disabled = false;
+    btn.textContent = 'Загрузить из Gist';
+    
+    if (result.success) {
+        alert('Данные загружены! Страница перезагрузится.');
+        location.reload();
+    } else {
+        alert('Ошибка: ' + result.error);
+    }
 }
 
 // ===== ФОРМАТИРОВАНИЕ =====
