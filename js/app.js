@@ -16,21 +16,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== АВТОСИНХРОНИЗАЦИЯ =====
 
+let lastSyncTime = 0;
+
 function startAutoSync() {
-    // Каждые 60 секунд загружаем данные из Gist
-    syncInterval = setInterval(() => {
+    // Сразу загружаем данные при открытии
+    if (Storage.getGitHubToken() && Storage.getGistId()) {
+        Storage.syncFromGist().then(result => {
+            if (result.success) {
+                updateSyncStatus('synced');
+                if (currentScreen === 'dashboard') loadDashboard();
+                if (currentScreen === 'orders') loadOrders();
+                if (currentScreen === 'reviews') loadReviews();
+            }
+        });
+    }
+    
+    // Каждые 15 секунд загружаем данные из Gist
+    setInterval(() => {
         if (Storage.getGitHubToken() && Storage.getGistId()) {
             Storage.syncFromGist().then(result => {
                 if (result.success) {
                     updateSyncStatus('synced');
-                    // Обновляем данные на экране
                     if (currentScreen === 'dashboard') loadDashboard();
                     if (currentScreen === 'orders') loadOrders();
                     if (currentScreen === 'reviews') loadReviews();
                 }
             });
         }
-    }, 60000);
+    }, 15000);
 }
 
 function updateSyncStatus(status) {
@@ -636,6 +649,18 @@ function saveSettings() {
     Storage.saveGistId(document.getElementById('gist-id').value);
     
     alert('Сохранено');
+    
+    // Автоматически синхронизируемся
+    if (Storage.getGitHubToken() && Storage.getGistId()) {
+        Storage.syncFromGist().then(result => {
+            if (result.success) {
+                updateSyncStatus('synced');
+                if (currentScreen === 'dashboard') loadDashboard();
+                if (currentScreen === 'orders') loadOrders();
+                if (currentScreen === 'reviews') loadReviews();
+            }
+        });
+    }
 }
 
 // ===== СИНХРОНИЗАЦИЯ =====
