@@ -20,7 +20,17 @@ let lastSyncTime = 0;
 
 function startAutoSync() {
     // Сразу загружаем данные при открытии
-    if (Storage.getGitHubToken() && Storage.getGistId()) {
+    Storage.syncFromGist().then(result => {
+        if (result.success) {
+            updateSyncStatus('synced');
+            if (currentScreen === 'dashboard') loadDashboard();
+            if (currentScreen === 'orders') loadOrders();
+            if (currentScreen === 'reviews') loadReviews();
+        }
+    });
+    
+    // Каждые 10 секунд загружаем данные из Gist
+    setInterval(() => {
         Storage.syncFromGist().then(result => {
             if (result.success) {
                 updateSyncStatus('synced');
@@ -29,21 +39,7 @@ function startAutoSync() {
                 if (currentScreen === 'reviews') loadReviews();
             }
         });
-    }
-    
-    // Каждые 15 секунд загружаем данные из Gist
-    setInterval(() => {
-        if (Storage.getGitHubToken() && Storage.getGistId()) {
-            Storage.syncFromGist().then(result => {
-                if (result.success) {
-                    updateSyncStatus('synced');
-                    if (currentScreen === 'dashboard') loadDashboard();
-                    if (currentScreen === 'orders') loadOrders();
-                    if (currentScreen === 'reviews') loadReviews();
-                }
-            });
-        }
-    }, 15000);
+    }, 10000);
 }
 
 function updateSyncStatus(status) {
@@ -644,32 +640,15 @@ function saveSettings() {
         airDeliveryRatePerKg: parseFloat(document.getElementById('rate-air-kg').value) || 120
     });
     
-    // GitHub Gist
     Storage.saveGitHubToken(document.getElementById('github-token').value);
     Storage.saveGistId(document.getElementById('gist-id').value);
     
     alert('Сохранено');
-    
-    // Автоматически синхронизируемся
-    if (Storage.getGitHubToken() && Storage.getGistId()) {
-        Storage.syncFromGist().then(result => {
-            if (result.success) {
-                updateSyncStatus('synced');
-                if (currentScreen === 'dashboard') loadDashboard();
-                if (currentScreen === 'orders') loadOrders();
-                if (currentScreen === 'reviews') loadReviews();
-            }
-        });
-    }
 }
 
 // ===== СИНХРОНИЗАЦИЯ =====
 
 async function syncToGist() {
-    // Сначала сохраняем токен и ID
-    Storage.saveGitHubToken(document.getElementById('github-token').value);
-    Storage.saveGistId(document.getElementById('gist-id').value);
-    
     const btn = event.target;
     btn.disabled = true;
     btn.textContent = 'Сохраняю...';
@@ -684,6 +663,38 @@ async function syncToGist() {
     } else {
         alert('Ошибка: ' + result.error);
     }
+}
+
+async function syncFromGist() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Загружаю...';
+    
+    const result = await Storage.syncFromGist();
+    
+    btn.disabled = false;
+    btn.textContent = 'Загрузить из Gist';
+    
+    if (result.success) {
+        alert('Данные загружены! Страница перезагрузится.');
+        location.reload();
+    } else {
+        alert('Ошибка: ' + result.error);
+    }
+}
+
+async function manualSync() {
+    updateSyncStatus('syncing');
+    await Storage.syncToGist();
+    const result = await Storage.syncFromGist();
+    updateSyncStatus(result.success ? 'synced' : 'error');
+    
+    if (result.success) {
+        if (currentScreen === 'dashboard') loadDashboard();
+        if (currentScreen === 'orders') loadOrders();
+        if (currentScreen === 'reviews') loadReviews();
+    }
+}
 }
 
 async function syncFromGist() {

@@ -270,23 +270,19 @@ const Storage = {
             reviews: this.getReviews(),
             withdrawals: this.getWithdrawals(),
             settings: this.getSettings(),
+            githubToken: this.getGitHubToken(),
+            gistId: this.getGistId(),
             lastSync: new Date().toISOString()
         };
     },
 
-    // Загрузить данные из Gist
+    // Загрузить данные из Gist (без токена - публичный Gist)
     async syncFromGist() {
-        const token = this.getGitHubToken();
-        const gistId = this.getGistId();
-
-        if (!token || !gistId) {
-            return { success: false, error: 'Не настроен Gist' };
-        }
+        const gistId = this.getGistId() || 'bfae8132b96a52fbd5092749d40f2475';
 
         try {
-            const response = await fetch(`https://api.github.com/gists/${gistId}`, {
-                headers: { 'Authorization': `token ${token}` }
-            });
+            // Читаем публичный Gist без токена
+            const response = await fetch(`https://api.github.com/gists/${gistId}`);
 
             if (!response.ok) {
                 return { success: false, error: 'Ошибка доступа к Gist' };
@@ -306,6 +302,10 @@ const Storage = {
             if (data.reviews) this.set(this.KEYS.REVIEWS, data.reviews);
             if (data.withdrawals) this.set(this.KEYS.WITHDRAWALS, data.withdrawals);
             if (data.settings) this.set(this.KEYS.SETTINGS, data.settings);
+            
+            // Восстанавливаем токен и ID если есть
+            if (data.githubToken) localStorage.setItem(this.KEYS.GITHUB_TOKEN, data.githubToken);
+            if (data.gistId) localStorage.setItem(this.KEYS.GIST_ID, data.gistId);
 
             return { success: true, lastSync: data.lastSync };
         } catch (e) {
