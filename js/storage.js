@@ -297,11 +297,11 @@ const Storage = {
 
             const data = JSON.parse(content);
 
-            // Сохраняем данные
-            if (data.orders) this.set(this.KEYS.ORDERS, data.orders);
-            if (data.reviews) this.set(this.KEYS.REVIEWS, data.reviews);
-            if (data.withdrawals) this.set(this.KEYS.WITHDRAWALS, data.withdrawals);
-            if (data.settings) this.set(this.KEYS.SETTINGS, data.settings);
+            // Сохраняем данные только если они есть и являются массивами/объектами
+            if (Array.isArray(data.orders)) this.set(this.KEYS.ORDERS, data.orders);
+            if (Array.isArray(data.reviews)) this.set(this.KEYS.REVIEWS, data.reviews);
+            if (Array.isArray(data.withdrawals)) this.set(this.KEYS.WITHDRAWALS, data.withdrawals);
+            if (data.settings && typeof data.settings === 'object') this.set(this.KEYS.SETTINGS, data.settings);
             
             // Восстанавливаем токен и ID если есть
             if (data.githubToken) localStorage.setItem(this.KEYS.GITHUB_TOKEN, data.githubToken);
